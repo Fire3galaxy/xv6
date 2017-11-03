@@ -48,6 +48,7 @@ fs.c
 file.c
 sysfile.c
 exec.c
+info.c #Daniel
 
 # pipes
 pipe.c

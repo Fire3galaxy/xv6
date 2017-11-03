@@ -7,10 +7,6 @@
 #include "x86.h"
 #include "elf.h"
 
-//int info(int param) {
-//    cprintf("hello world");
-//    return 0;
-//}
 int
 exec(char *path, char **argv)
 {
