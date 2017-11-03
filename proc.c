@@ -332,6 +332,14 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    // HERE: Replace the for loop below with a lottery scheduler implementation
+    // Todo: figure out total number of lottery tickets
+    // rand number generator
+    // a default # of lottery tickets for each process
+
+    // So each process in the table has a lower address than the
+    // process after it in the table. Weird.
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
