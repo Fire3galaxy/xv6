@@ -334,11 +334,6 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-
-  if (all_tickets == 0)
-    panic("All tickets is 0");
-  else
-    panic("Trying something anyway");
   
   for(;;){
     // Enable interrupts on this processor.
@@ -567,6 +562,10 @@ unsigned long myRandstate = 1;
 unsigned int
 randTicket()
 {
+  if (all_tickets == 0) {
+    cprintf("Tickets is 0. Continuing anyway\n");
+    return 1;
+  }
   myRandstate = myRandstate * 1664525 + 1013904223;
   return myRandstate % all_tickets + 1;
 }
