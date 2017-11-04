@@ -10,8 +10,9 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
-// info.c (DANIEL)
+// info.c,proc.c (DANIEL)
 int             info(int);
+void            setptickets(uint);
 
 // bio.c
 void            binit(void);

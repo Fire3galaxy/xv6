@@ -8,6 +8,10 @@
     int $T_SYSCALL; \
     ret
 
+// Daniel
+SYSCALL(info)
+SYSCALL(setptickets)
+
 SYSCALL(fork)
 SYSCALL(exit)
 SYSCALL(wait)

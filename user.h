@@ -1,6 +1,10 @@
 struct stat;
 struct rtcdate;
 
+// DANIEL
+int info(int);  
+void setptickets(uint);
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
@@ -23,7 +27,6 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int info(int);  // DANIEL
 
 // ulib.c
 int stat(char*, struct stat*);

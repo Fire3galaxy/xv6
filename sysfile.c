@@ -16,6 +16,23 @@
 #include "file.h"
 #include "fcntl.h"
 
+// DANIEL
+int
+sys_info(void)
+{
+    return info(1);
+}
+
+int
+sys_setptickets(void)
+{
+    int tickets;
+    if(argint(0, &tickets) < 0)
+      return -1;
+    setptickets(tickets);
+    return 0;
+}
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -442,10 +459,4 @@ sys_pipe(void)
   fd[0] = fd0;
   fd[1] = fd1;
   return 0;
-}
-
-int
-sys_info(void)
-{
-    return info(1);
 }

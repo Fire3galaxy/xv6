@@ -581,3 +581,20 @@ randTicket(int active)
   myRandstate = myRandstate * 1664525 + 1013904223;
   return myRandstate % all_tickets + 1;
 }
+
+void setptickets(uint tickets) {
+    struct proc *curproc = myproc();
+    uint old_tickets = curproc->lottery_tickets;
+
+    // update process tickets
+    cprintf("for process %d, old tickets %d, new tickets %d\n",
+        curproc->pid, old_tickets, tickets);
+    curproc->lottery_tickets = tickets;
+    
+    // update total tickets
+    all_tickets -= old_tickets;
+    all_tickets += tickets;
+}
+
+void print_ticks() {
+}
