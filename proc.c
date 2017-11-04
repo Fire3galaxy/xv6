@@ -577,5 +577,5 @@ randTicket()
     return 1;
   }
   myRandstate = myRandstate * 1664525 + 1013904223;
-  return myRandstate;
+  return myRandstate % active_tickets + 1;
 }
