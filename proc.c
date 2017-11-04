@@ -360,21 +360,23 @@ scheduler(void)
         }
       }
     }
-    cprintf("process %s, tickets %d, state %d\n", p->name, p->lottery_tickets, p->state);
 
-    // Switch to chosen process.  It is the process's job
-    // to release ptable.lock and then reacquire it
-    // before jumping back to us.
-    c->proc = p;
-    switchuvm(p);
-    p->state = RUNNING;
+    if (p->state == RUNNABLE) {
+      cprintf("process %s, tickets %d, state %d\n", p->name, p->lottery_tickets, p->state);
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
 
-    swtch(&(c->scheduler), p->context);
-    switchkvm();
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
 
-    // Process is done running for now.
-    // It should have changed its p->state before coming back.
-    c->proc = 0;
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
 
     release(&ptable.lock);
 
