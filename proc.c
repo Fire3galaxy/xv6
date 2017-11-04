@@ -333,6 +333,11 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+
+  if (all_tickets == 0)
+    panic("All tickets is 0");
+  else
+    panic("Trying something anyway");
   
   for(;;){
     // Enable interrupts on this processor.
