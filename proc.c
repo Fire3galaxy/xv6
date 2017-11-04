@@ -92,6 +92,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->lottery_tickets = 10;
+  p->ticks = 0;
   all_tickets += 10;
   cprintf("allocproc pid %d. Curr total tix %d\n", nextpid, all_tickets);
 
@@ -255,7 +256,7 @@ exit(void)
 
   acquire(&ptable.lock);
 
-  all_tickets -= 10;
+  all_tickets -= curproc->lottery_tickets;
   cprintf("exit pid %d. Curr total tix %d\n", curproc->pid, all_tickets);
 
   // Parent might be sleeping in wait().
@@ -349,9 +350,11 @@ scheduler(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
       if(p->state == RUNNABLE)
         active_tickets += p->lottery_tickets;
+    uint tmp;
 
     if (active_tickets > 0) {
       win_ticket = randTicket(active_tickets); // indexed from 1
+      tmp = win_ticket;
     //else
     //  win_ticket = 1;
 
@@ -369,12 +372,16 @@ scheduler(void)
       }
 
       if (p->state == RUNNABLE) {
+        //cprintf("win ticket %d, winning process has %d, active tickets %d\n", 
+        //  tmp, p->lottery_tickets, active_tickets);
+
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
+        (p->ticks)++;
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
@@ -579,7 +586,7 @@ randTicket(int active)
     return 1;
   }
   myRandstate = myRandstate * 1664525 + 1013904223;
-  return myRandstate % all_tickets + 1;
+  return myRandstate % active + 1;
 }
 
 void setptickets(uint tickets) {
@@ -597,4 +604,6 @@ void setptickets(uint tickets) {
 }
 
 void print_ticks() {
+  struct proc *curproc = myproc();
+  cprintf("Process pid %d: %d ticks\n", curproc->pid, curproc->ticks);
 }

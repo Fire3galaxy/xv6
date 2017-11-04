@@ -176,7 +176,9 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_myTest\
-	_prog\
+	_prog1\
+	_prog2\
+	_prog3\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -249,7 +251,6 @@ EXTRA=\
 	printf.c umalloc.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
-	prog.c\
 
 dist:
 	rm -rf dist

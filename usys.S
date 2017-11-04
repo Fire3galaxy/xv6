@@ -11,6 +11,7 @@
 // Daniel
 SYSCALL(info)
 SYSCALL(setptickets)
+SYSCALL(print_ticks)
 
 SYSCALL(fork)
 SYSCALL(exit)

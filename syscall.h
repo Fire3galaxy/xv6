@@ -23,4 +23,5 @@
 
 //DANIEL
 #define SYS_info   22 
-#define SYS_setptickets   23
+#define SYS_setptickets     23
+#define SYS_print_ticks   24

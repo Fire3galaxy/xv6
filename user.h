@@ -4,6 +4,7 @@ struct rtcdate;
 // DANIEL
 int info(int);  
 void setptickets(uint);
+void print_ticks(void);
 
 // system calls
 int fork(void);

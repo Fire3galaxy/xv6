@@ -13,6 +13,7 @@ struct superblock;
 // info.c,proc.c (DANIEL)
 int             info(int);
 void            setptickets(uint);
+void            print_ticks(void);
 
 // bio.c
 void            binit(void);
