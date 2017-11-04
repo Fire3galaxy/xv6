@@ -93,6 +93,7 @@ found:
   p->pid = nextpid++;
   p->lottery_tickets = 10;
   all_tickets += 10;
+  cprintf("allocproc\n");
 
   release(&ptable.lock);
 
