@@ -8,7 +8,6 @@ int main(int argc, char *argv[])
     const int loop=43000;
     for(i=0;i<loop;i++)
     {
-      //print_ticks();
         asm("nop");       //in order to prevent the compiler from optimizing the for loop
         for(k=0;k<loop;k++)
         {

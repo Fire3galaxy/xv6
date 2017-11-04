@@ -20,24 +20,27 @@
 int
 sys_info(void)
 {
-    return info(1);
+  int param;
+  if(argint(0, &param) < 0)
+    return -1;
+  return info(param);
 }
 
 int
 sys_setptickets(void)
 {
-    int tickets;
-    if(argint(0, &tickets) < 0)
-      return -1;
-    setptickets(tickets);
-    return 0;
+  int tickets;
+  if(argint(0, &tickets) < 0)
+    return -1;
+  setptickets(tickets);
+  return 0;
 }
 
 int
 sys_print_ticks(void)
 {
-    print_ticks();
-    return 0;
+  print_ticks();
+  return 0;
 }
 
 

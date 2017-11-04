@@ -93,8 +93,8 @@ found:
   p->pid = nextpid++;
   p->lottery_tickets = 10;
   p->ticks = 0;
+  p->syscall_count = 0;
   all_tickets += 10;
-  cprintf("allocproc pid %d. Curr total tix %d\n", nextpid, all_tickets);
 
   release(&ptable.lock);
 
@@ -257,7 +257,6 @@ exit(void)
   acquire(&ptable.lock);
 
   all_tickets -= curproc->lottery_tickets;
-  cprintf("exit pid %d. Curr total tix %d\n", curproc->pid, all_tickets);
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
@@ -338,6 +337,9 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+
+  uint active_tickets;
+  uint win_ticket;
   
   for(;;){
     // Enable interrupts on this processor.
@@ -347,28 +349,27 @@ scheduler(void)
     acquire(&ptable.lock);
 
     // Loop over runnable processes to know # of active tickets
-    uint active_tickets = 0;
-    uint win_ticket;
+    active_tickets = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
       if(p->state == RUNNABLE)
         active_tickets += p->lottery_tickets;
 
+    // If there are active tickets, hold a lottery
     if (active_tickets > 0) {
+      // lottery ticket
       win_ticket = randTicket(active_tickets); // indexed from 1
 
-      // So each process in the table has a lower address than the
-      // process after it in the table. Weird.
+      // Now find the winning process
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state == RUNNABLE) {
-          if (p->lottery_tickets < win_ticket) {
+          if (p->lottery_tickets < win_ticket)
             win_ticket -= p->lottery_tickets;
-          } 
-          else {
+          else
             break;
-          }
         }
       }
 
+      // Make sure the for loop finished because it found a winner
       if (p->state == RUNNABLE) {
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
@@ -600,9 +601,51 @@ void setptickets(uint tickets) {
 
 void print_ticks() {
   acquire(&ptable.lock);
+  // Print who just finished
+  struct proc *curproc = myproc();
+  cprintf("Process %d just finished. Printing rest of ticks.\n", curproc->pid);
+
+  // Print all tick values
   struct proc *p;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if (p->state == RUNNING)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (p->ticks != 0)
       cprintf("Process pid %d: %d ticks\n", p->pid, p->ticks);
+  }
+  cprintf("\n");
+
   release(&ptable.lock);
+}
+
+int
+info(int param)
+{
+  struct proc *p;
+  uint numProc = 0;
+  uint numPage = 0;
+
+  switch (param) {
+    case 1:
+      // Part 1: number of processes in the system
+      // I'm gonna consider zombies and embryos as existing processes too
+      acquire(&ptable.lock);
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+        if (p->state != UNUSED)
+          numProc++;
+      release(&ptable.lock);
+
+      return numProc;
+    case 2:
+      // Part 2: number of syscalls called by current program
+      p = myproc();
+      return p->syscall_count;
+    case 3:
+      // Part 3: Number of memory pages process is currently using
+      p = myproc();
+      numPage = p->sz / PGSIZE;
+      if (p->sz % PGSIZE > 0)
+        return numPage + 1;
+      return numPage;
+  }
+
+  return 0;
 }
