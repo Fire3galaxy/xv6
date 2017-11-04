@@ -93,7 +93,7 @@ found:
   p->pid = nextpid++;
   p->lottery_tickets = 10;
   all_tickets += 10;
-  cprintf("allocproc\n");
+  cprintf("allocproc pid %d. Curr total tix %d\n", nextpid, all_tickets);
 
   release(&ptable.lock);
 
@@ -256,6 +256,7 @@ exit(void)
   acquire(&ptable.lock);
 
   all_tickets -= 10;
+  cprintf("exit pid %d. Curr total tix %d\n", curproc->pid, all_tickets);
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
@@ -362,7 +363,6 @@ scheduler(void)
     }
 
     if (p->state == RUNNABLE) {
-      cprintf("process %s, tickets %d, state %d\n", p->name, p->lottery_tickets, p->state);
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -566,7 +566,6 @@ unsigned int
 randTicket()
 {
   if (all_tickets == 0) {
-    cprintf("Tickets is 0. Continuing anyway\n");
     return 1;
   }
   myRandstate = myRandstate * 1664525 + 1013904223;
