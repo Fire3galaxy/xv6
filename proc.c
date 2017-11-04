@@ -330,6 +330,8 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+int lastActive = 0;
 void
 scheduler(void)
 {
@@ -348,13 +350,18 @@ scheduler(void)
     uint active_tickets = 0;
     uint win_ticket;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-      if(p->state == RUNNABLE)
+      if(p->state == RUNNABLE) {
         active_tickets += p->lottery_tickets;
+        if (lastActive != active_tickets) {
+          cprintf("new active ticket size %d\n", active_tickets);
+          lastActive = active_tickets;
+        }
+      }
     uint tmp;
 
     if (active_tickets > 0) {
       win_ticket = randTicket(active_tickets); // indexed from 1
-      tmp = win_ticket;
+      //tmp = win_ticket;
     //else
     //  win_ticket = 1;
 
