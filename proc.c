@@ -20,6 +20,9 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+uint all_tickets = 0;
+unsigned int randTicket();
+
 void
 pinit(void)
 {
@@ -88,6 +91,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->lottery_tickets = 10;
+  all_tickets += 10;
 
   release(&ptable.lock);
 
@@ -249,6 +254,8 @@ exit(void)
 
   acquire(&ptable.lock);
 
+  all_tickets -= 10;
+
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
 
@@ -295,6 +302,7 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        p->lottery_tickets = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -334,30 +342,38 @@ scheduler(void)
     acquire(&ptable.lock);
 
     // HERE: Replace the for loop below with a lottery scheduler implementation
-    // Todo: figure out total number of lottery tickets
     // rand number generator
-    // a default # of lottery tickets for each process
+
+    // FIXME: implement randTicket()
+    uint win_ticket = randTicket(); // indexed from 1
 
     // So each process in the table has a lower address than the
     // process after it in the table. Weird.
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+      if(p->state == RUNNABLE) {
+        if (p->lottery_tickets < win_ticket) {
+          win_ticket -= p->lottery_tickets;
+        } 
+        else {
+          break;
+        }
+      }
     }
+
+    // Switch to chosen process.  It is the process's job
+    // to release ptable.lock and then reacquire it
+    // before jumping back to us.
+    c->proc = p;
+    switchuvm(p);
+    p->state = RUNNING;
+
+    swtch(&(c->scheduler), p->context);
+    switchkvm();
+
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
+
     release(&ptable.lock);
 
   }
@@ -539,4 +555,12 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+unsigned long myRandstate = 1;
+unsigned int
+randTicket()
+{
+  myRandstate = myRandstate * 1664525 + 1013904223;
+  return myRandstate % all_tickets + 1;
 }
