@@ -360,6 +360,7 @@ scheduler(void)
         }
       }
     }
+    cprintf("process %s, tickets %d, state %d\n", p->name, p->lottery_tickets, p->state);
 
     // Switch to chosen process.  It is the process's job
     // to release ptable.lock and then reacquire it
