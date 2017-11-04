@@ -350,20 +350,11 @@ scheduler(void)
     uint active_tickets = 0;
     uint win_ticket;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-      if(p->state == RUNNABLE) {
+      if(p->state == RUNNABLE)
         active_tickets += p->lottery_tickets;
-        if (lastActive != active_tickets) {
-          cprintf("new active ticket size %d\n", active_tickets);
-          lastActive = active_tickets;
-        }
-      }
-    uint tmp;
 
     if (active_tickets > 0) {
       win_ticket = randTicket(active_tickets); // indexed from 1
-      //tmp = win_ticket;
-    //else
-    //  win_ticket = 1;
 
       // So each process in the table has a lower address than the
       // process after it in the table. Weird.
@@ -379,9 +370,6 @@ scheduler(void)
       }
 
       if (p->state == RUNNABLE) {
-        //cprintf("win ticket %d, winning process has %d, active tickets %d\n", 
-        //  tmp, p->lottery_tickets, active_tickets);
-
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
@@ -611,6 +599,10 @@ void setptickets(uint tickets) {
 }
 
 void print_ticks() {
-  struct proc *curproc = myproc();
-  cprintf("Process pid %d: %d ticks\n", curproc->pid, curproc->ticks);
+  acquire(&ptable.lock);
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if (p->state == RUNNING)
+      cprintf("Process pid %d: %d ticks\n", p->pid, p->ticks);
+  release(&ptable.lock);
 }

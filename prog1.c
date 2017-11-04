@@ -3,11 +3,9 @@
 #include "user.h"
 int main(int argc, char *argv[])
 {
-    //FUNCTION_SETS_NUMBER_OF_TICKETS(30);    // write your own function here
     setptickets(30);
     int i,k;
-    //const int loop=43000;
-    const int loop = 20;
+    const int loop=43000;
     for(i=0;i<loop;i++)
     {
       //print_ticks();
