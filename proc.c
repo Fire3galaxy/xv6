@@ -20,7 +20,7 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-uint all_tickets = 0;
+uint active_tickets = 0;
 unsigned int randTicket();
 
 void
@@ -92,8 +92,8 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->lottery_tickets = 10;
-  all_tickets += 10;
-  cprintf("allocproc pid %d. Curr total tix %d\n", nextpid, all_tickets);
+  active_tickets += 10;
+  cprintf("allocproc pid %d. Curr total tix %d\n", nextpid, active_tickets);
 
   release(&ptable.lock);
 
@@ -255,8 +255,8 @@ exit(void)
 
   acquire(&ptable.lock);
 
-  all_tickets -= 10;
-  cprintf("exit pid %d. Curr total tix %d\n", curproc->pid, all_tickets);
+  active_tickets -= 10;
+  cprintf("exit pid %d. Curr total tix %d\n", curproc->pid, active_tickets);
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
@@ -346,7 +346,6 @@ scheduler(void)
     // HERE: Replace the for loop below with a lottery scheduler implementation
     // rand number generator
 
-    // FIXME: implement randTicket()
     uint win_ticket = randTicket(); // indexed from 1
 
     // So each process in the table has a lower address than the
@@ -466,6 +465,8 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+  active_tickets -= p->lottery_tickets;
+  cprintf("sleep pid %d, tickets now %d\n", p->pid, active_tickets);
 
   sched();
 
@@ -487,9 +488,13 @@ wakeup1(void *chan)
 {
   struct proc *p;
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state == SLEEPING && p->chan == chan) {
       p->state = RUNNABLE;
+      active_tickets += p->lottery_tickets;
+      cprintf("wakeup pid %d, tickets now %d\n", p->pid, active_tickets);
+    }
+  }
 }
 
 // Wake up all processes sleeping on chan.
@@ -514,8 +519,11 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING) {
         p->state = RUNNABLE;
+        active_tickets += p->lottery_tickets;
+        cprintf("kill woke up pid %d, tickets now %d\n", p->pid, active_tickets);
+      }
       release(&ptable.lock);
       return 0;
     }
@@ -565,9 +573,9 @@ unsigned long myRandstate = 1;
 unsigned int
 randTicket()
 {
-  if (all_tickets == 0) {
+  if (active_tickets == 0) {
     return 1;
   }
   myRandstate = myRandstate * 1664525 + 1013904223;
-  return myRandstate % all_tickets + 1;
+  return myRandstate;
 }
