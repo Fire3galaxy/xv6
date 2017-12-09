@@ -7,6 +7,17 @@
 #include "mmu.h"
 #include "proc.h"
 
+int 
+sys_clone(void)
+{
+  char* stack;
+  int size;
+
+  if(argint(1, &size) < 0 || argptr(0, &stack, size) < 0)
+    return -1;
+  return clone((void*) stack, size);
+}
+
 int
 sys_fork(void)
 {

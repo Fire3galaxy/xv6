@@ -12,6 +12,7 @@ struct superblock;
 
 // info.c (DANIEL)
 int             info(int);
+int             clone(void*, int);
 
 // bio.c
 void            binit(void);

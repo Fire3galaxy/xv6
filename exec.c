@@ -7,15 +7,14 @@
 #include "x86.h"
 #include "elf.h"
 
-//int info(int param) {
-//    cprintf("hello world");
-//    return 0;
-//}
 int
 exec(char *path, char **argv)
 {
   char *s, *last;
   int i, off;
+  // ustack: First 3 values is argv, argc, and fake return pointer.
+  // MAXARG is where the arguments are.
+  // Last spot is if we have maximum args. Room for null.
   uint argc, sz, sp, ustack[3+MAXARG+1];
   struct elfhdr elf;
   struct inode *ip;
@@ -66,27 +65,40 @@ exec(char *path, char **argv)
 
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible.  Use the second as the user stack.
+  cprintf("In exec: size = %d, %d, %d\n", sz, PGROUNDUP(sz), PGROUNDDOWN(sz));
   sz = PGROUNDUP(sz);
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
-  clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
-  sp = sz;
+  clearpteu(pgdir, (char*)(sz - 2*PGSIZE)); // beginning of 1st new page
+  sp = sz;  // Technically pointing at the end of the 2nd new page.
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
       goto bad;
+    // Decrement stack pointer by length of string + 1 for null term.
+    // Since it's decrementing, & ~3 only makes it even smaller, for
+    // alignment's sake (e.g. ...11 -> ...00).
     sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
+    // Copy string into allocated space on stack
     if(copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
       goto bad;
+    // pointer to this argument
     ustack[3+argc] = sp;
   }
   ustack[3+argc] = 0;
 
+  // First 3 values on user stack.
   ustack[0] = 0xffffffff;  // fake return PC
   ustack[1] = argc;
-  ustack[2] = sp - (argc+1)*4;  // argv pointer
+  // pointer to location where first argv pointer will be.
+  // Think like this: The ustack will copied to the location underneath the args.
+  // sp - (argc+1)*4 is where the pointers we made in the for loop will be (including 
+  // a null term). 
+  ustack[2] = sp - (argc+1)*4;  
 
+  // This makes room for the argv pointers and the null term (stated above) and the first 3
+  // args of ustack.
   sp -= (3+argc+1) * 4;
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
     goto bad;

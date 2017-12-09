@@ -1,6 +1,9 @@
 struct stat;
 struct rtcdate;
 
+// By Daniel
+int clone(void*, int);
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));

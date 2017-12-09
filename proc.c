@@ -163,9 +163,11 @@ growproc(int n)
 
   sz = curproc->sz;
   if(n > 0){
+    // Allocate more pages for memory
     if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   } else if(n < 0){
+    // Deallocate pages 
     if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
       return -1;
   }
@@ -532,3 +534,49 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// DANIEL
+int
+clone (void* stack, int size) {
+  cprintf("The clone is here\n");
+
+  int i, pid;
+  struct proc *np;
+  struct proc *curproc = myproc();
+
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+
+  // For the sake of restraint, I'm leaving this line where the creator process is "parent",
+  // but in the context of threads, this is meaningless.
+  np->parent = curproc;
+  *np->tf = *curproc->tf;
+
+  // The same address space part
+  np->pgdir = curproc->pgdir; // same address space
+  np->sz = size;              // "Bottom" of stack, top of memroy for stack
+  *np->tf->esp = stack;       // "Top" of stack
+
+  // Clear %eax so that fork returns 0 in the child.
+  np->tf->eax = 0;
+
+  // Pass file descriptors (not a copy)
+  for(i = 0; i < NOFILE; i++)
+    if(curproc->ofile[i])
+      np->ofile[i] = curproc->ofile[i];
+  np->cwd = idup(curproc->cwd);
+
+  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+
+  pid = np->pid;
+
+  acquire(&ptable.lock);
+
+  np->state = RUNNABLE;
+
+  release(&ptable.lock);
+
+  return pid;
+}
+

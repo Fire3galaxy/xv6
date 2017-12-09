@@ -444,8 +444,3 @@ sys_pipe(void)
   return 0;
 }
 
-int
-sys_info(void)
-{
-    return info(1);
-}

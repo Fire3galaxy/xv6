@@ -38,10 +38,17 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   pde_t *pde;
   pte_t *pgtab;
 
+  // PDX(va) -> the leftmost 10 bits (directory index)
+  // pde = address to PDX(va)'th entry in pg directory
   pde = &pgdir[PDX(va)];
+  // pde is present already.
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  } else {
+  } 
+  // pde is not present, we need to allocate a page table and
+  // make a new page table entry (if alloc == 1)
+  else {
+    // kalloc() probably defaults to allocating a page size of mem
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
       return 0;
     // Make sure all those PTE_P bits are zero.
@@ -49,8 +56,11 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
+    // pde is a pointer to page table
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
+  // Returns address to particular page table entry corresponding to va
+  // PTX = Page table index. So middle 10 bits of va
   return &pgtab[PTX(va)];
 }
 
@@ -63,16 +73,24 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   char *a, *last;
   pte_t *pte;
 
+  // PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1)) Makes the rightmost 12 bits into 0
+  // So, turn virtual address into offset = 0, the beginning of the page
   a = (char*)PGROUNDDOWN((uint)va);
+  // Since va and size are not page-aligned, last could be in another page
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
   for(;;){
+    // "walk page dir" means to access the page dir and get the page table entry
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
+    // Must not be present yet (walkpgdir could either give existing or newly alloc one)
     if(*pte & PTE_P)
       panic("remap");
+    // Goes directly to physical address
     *pte = pa | perm | PTE_P;
+    // Mapped last needed page table entry to needed page
     if(a == last)
       break;
+    // Onto next page
     a += PGSIZE;
     pa += PGSIZE;
   }
@@ -229,7 +247,11 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   if(newsz < oldsz)
     return oldsz;
 
+  // PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1)) 
+  // This macro gives you the "real size" of the available memory (e.g. 2760 -> 4096).
+  // This "real size" also happens to be the first virtual address of the next page.
   a = PGROUNDUP(oldsz);
+  // If new size does not merit a page, this doesn't loop
   for(; a < newsz; a += PGSIZE){
     mem = kalloc();
     if(mem == 0){
