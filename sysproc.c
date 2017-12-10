@@ -7,15 +7,28 @@
 #include "mmu.h"
 #include "proc.h"
 
+#define WORD 4 // 4 bytes
+
 int 
 sys_clone(void)
 {
   char* stack;
   int size;
 
-  if(argint(1, &size) < 0 || argptr(0, &stack, size) < 0)
+  if(argint(1, &size) < 0 || argptr(0, &stack, PGSIZE) < 0)
     return -1;
   return clone((void*) stack, size);
+}
+
+int 
+sys_thread_create(void)
+{
+  void *(*start_routine)(void*);
+  void *arg;
+
+  if(argptr(0, &((char*) start_routine), WORD) < 0 || argptr(0, &((char*) arg), WORD) < 0)
+    return -1;
+  return (int) thread_create(start_routine, arg);
 }
 
 int

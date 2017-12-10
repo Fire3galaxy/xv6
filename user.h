@@ -3,6 +3,7 @@ struct rtcdate;
 
 // By Daniel
 int clone(void*, int);
+void* thread_create(void *(*start_routine)(void*), void*);
 
 // system calls
 int fork(void);

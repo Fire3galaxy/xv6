@@ -11,8 +11,8 @@ struct stat;
 struct superblock;
 
 // info.c (DANIEL)
-int             info(int);
 int             clone(void*, int);
+void*           thread_create(void *(*start_routine)(void*), void*);
 
 // bio.c
 void            binit(void);

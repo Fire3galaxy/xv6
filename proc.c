@@ -554,9 +554,9 @@ clone (void* stack, int size) {
   *np->tf = *curproc->tf;
 
   // The same address space part
-  np->pgdir = curproc->pgdir; // same address space
-  np->sz = size;              // "Bottom" of stack, top of memroy for stack
-  *np->tf->esp = stack;       // "Top" of stack
+  np->pgdir = curproc->pgdir;   // same address space
+  np->sz = size;                // "Bottom" of stack, top of memroy for stack
+  np->tf->esp = (uint) stack;   // "Top" of stack
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -580,3 +580,33 @@ clone (void* stack, int size) {
   return pid;
 }
 
+void*
+thread_create(void *(*start_routine)(void*), void* arg) {
+  // Copying exec, I need two full pages of memory for a new stack.
+  // The problem is that for this process, we might be in the middle of a page.
+  // I don't want to invalidate that, so I need to "add" the difference between
+  // the top of this process' current page and where the process currently is in 
+  // this page to 2 * PGSIZE.
+  struct proc *curproc = myproc();
+  int sz = PGROUNDUP(curproc->sz + 2 * PGSIZE);
+  int stackBottom = sz - PGSIZE;
+  int stackBytes = sz - curproc->sz;
+  int pid;
+
+  // Allocate space for the new thread stack
+  if (growproc(stackBytes) == -1)
+    return 0;
+
+  // Make the first stack page unusable
+  clearpteu(curproc->pgdir, (char*)(sz - 2*PGSIZE)); // beginning of 1st new page
+
+  // Make a thread with a new stack with the second page
+  // Returns 0 == is the child
+  if (!(pid = clone((void*) stackBottom, sz))) {
+    return start_routine(arg);
+  } 
+  // "parent" doesn't need to start anything.
+  else {
+    return 0;
+  }
+}
